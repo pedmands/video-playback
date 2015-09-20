@@ -12,14 +12,20 @@ videoApp.controller('VideoController', ['$scope', '$window', '$interval', functi
 	$scope.scrubLeft = -1000;
 	$scope.vidHeightCenter = -1000;
 	$scope.vidWidthCenter = -1000;
+	$scope.isDragging = false;
+	$scope.showOptions = false;
 
 
 	$interval(function(){
-	    var t = $scope.videoDisplay.currentTime;
-	    var d = $scope.videoDisplay.duration;
-	    var w = t / d * 100;
-	    var p = document.getElementById('progressMeterFull').offsetLeft + document.getElementById('progressMeterFull').offsetWidth;
-	    $scope.scrubLeft = (t / d * p) - 7;
+		if(!$scope.isDragging){
+		    var t = $scope.videoDisplay.currentTime;
+		    var d = $scope.videoDisplay.duration;
+		    var w = t / d * 100;
+		    var p = document.getElementById('progressMeterFull').offsetLeft + document.getElementById('progressMeterFull').offsetWidth;
+		    $scope.scrubLeft = (t / d * p) - 7;
+		}else{
+			$scope.scrubLeft = document.getElementById('thumbScrubber').offsetLeft;
+		}
 	    $scope.updateLayout();
 	},100);
 
@@ -35,6 +41,7 @@ videoApp.controller('VideoController', ['$scope', '$window', '$interval', functi
     }
     
     $scope.updateTime = function(e) {
+    	if(!$scope.videoDisplay.seeking){
         $scope.currentTime = e.target.currentTime;
         if($scope.currentTime == $scope.totalTime){
 	        $scope.videoDisplay.pause();
@@ -42,6 +49,7 @@ videoApp.controller('VideoController', ['$scope', '$window', '$interval', functi
 	        $scope.currentTime = 0;
 	        $('#playBtn').children("span").toggleClass("glyphicon-play", true);
 	        $('#playBtn').children("span").toggleClass("glyphicon-pause", false);
+		    }
 	    }
     }
 
@@ -51,6 +59,38 @@ videoApp.controller('VideoController', ['$scope', '$window', '$interval', functi
 	    $scope.vidWidthCenter = $scope.videoDisplay.offsetWidth/2 - 50;
 	    if(!$scope.$$phase) {
 	        $scope.$apply();
+	    }
+	}
+
+	$scope.mouseMoving = function($event) {
+	    if($scope.isDragging){
+	        $("#thumbScrubber").offset({left:$event.pageX});
+	    }
+	}
+	    
+	$scope.dragStart = function($event) {
+	    $scope.isDragging = true;
+	}
+
+	$scope.dragStop = function($event) {
+	    if($scope.isDragging){
+	        $scope.videoSeek($event);
+	        $scope.isDragging = false;
+	    }
+	}
+
+	$scope.videoSeek = function($event) {
+	    var w = document.getElementById('progressMeterFull').offsetWidth;
+	    var d = $scope.videoDisplay.duration;
+	    var s = Math.round($event.pageX / w * d);
+	    $scope.videoDisplay.currentTime = s;
+	}
+
+	$scope.toggleDetails = function() {
+	    if($scope.showOptions){
+	        $scope.showOptions = false;
+	    }else{
+	        $scope.showOptions = true;
 	    }
 	}
 
@@ -79,6 +119,19 @@ videoApp.controller('VideoController', ['$scope', '$window', '$interval', functi
             $('#muteBtn').children("span").toggleClass("glyphicon-volume-off", true);
         }
     }
+
+    $scope.toggleFullscreen = function() {
+	    var v = $scope.videoDisplay;
+	    if(v.requestFullscreen) {
+	        v.requestFullscreen();
+	    }else if(v.mozRequestFullScreen) {
+	        v.mozRequestFullScreen();
+	    }else if(v.webkitRequestFullscreen) {
+	        v.webkitRequestFullscreen();
+	    }else if(v.msRequestFullscreen) {
+	        v.msRequestFullscreen();
+	    }
+	}
 
     $scope.initPlayer();
 

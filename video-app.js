@@ -1,6 +1,6 @@
 var videoApp = angular.module('videoApp', []);
 
-videoApp.controller('VideoController', ['$scope', '$window', function($scope, $window) {
+videoApp.controller('VideoController', ['$scope', '$window', '$interval', function($scope, $window, $interval) {
 	$scope.videoDisplay = document.getElementById("VideoElement");
 	$scope.videoSource = $window.videoSource;
 	$scope.titleDisplay = $window.titleDisplay;
@@ -8,6 +8,20 @@ videoApp.controller('VideoController', ['$scope', '$window', function($scope, $w
 	$scope.videoPlaying = false;
 	$scope.currentTime;
 	$scope.totalTime;
+	$scope.scrubTop = -1000;
+	$scope.scrubLeft = -1000;
+	$scope.vidHeightCenter = -1000;
+	$scope.vidWidthCenter = -1000;
+
+
+	$interval(function(){
+	    var t = $scope.videoDisplay.currentTime;
+	    var d = $scope.videoDisplay.duration;
+	    var w = t / d * 100;
+	    var p = document.getElementById('progressMeterFull').offsetLeft + document.getElementById('progressMeterFull').offsetWidth;
+	    $scope.scrubLeft = (t / d * p) - 7;
+	    $scope.updateLayout();
+	},100);
 
 	$scope.initPlayer = function() {
         $scope.currentTime = 0;
@@ -22,14 +36,23 @@ videoApp.controller('VideoController', ['$scope', '$window', function($scope, $w
     
     $scope.updateTime = function(e) {
         $scope.currentTime = e.target.currentTime;
-        $scope.updateLayout();
+        if($scope.currentTime == $scope.totalTime){
+	        $scope.videoDisplay.pause();
+	        $scope.videoPlaying = false;
+	        $scope.currentTime = 0;
+	        $('#playBtn').children("span").toggleClass("glyphicon-play", true);
+	        $('#playBtn').children("span").toggleClass("glyphicon-pause", false);
+	    }
     }
 
-    $scope.updateLayout = function() {
-        if(!$scope.$$phase) {
-            $scope.$apply();
-        }
-    }
+	$scope.updateLayout = function() {
+	    $scope.scrubTop = document.getElementById('progressMeterFull').offsetTop-2;
+	    $scope.vidHeightCenter =  $scope.videoDisplay.offsetHeight/2 - 50;
+	    $scope.vidWidthCenter = $scope.videoDisplay.offsetWidth/2 - 50;
+	    if(!$scope.$$phase) {
+	        $scope.$apply();
+	    }
+	}
 
 	$scope.togglePlay = function() { 
         if($scope.videoDisplay.paused){
@@ -47,7 +70,7 @@ videoApp.controller('VideoController', ['$scope', '$window', function($scope, $w
     
     $scope.toggleMute = function() {
         if($scope.videoDisplay.volume == 0.0){
-            $scope.videoDisplay.volume = 0.75;
+            $scope.videoDisplay.volume = 0.5;
             $('#muteBtn').children("span").toggleClass("glyphicon-volume-up", true);
             $('#muteBtn').children("span").toggleClass("glyphicon-volume-off", false);
         }else{
@@ -60,3 +83,10 @@ videoApp.controller('VideoController', ['$scope', '$window', function($scope, $w
     $scope.initPlayer();
 
 }]);
+
+videoApp.filter('time', function() {
+    return function(seconds) {
+        var hh = Math.floor(seconds / 3600), mm = Math.floor(seconds / 60) % 60, ss = Math.floor(seconds) % 60;
+        return hh + ":" + (mm < 10 ? "0" : "") + mm + ":" + (ss < 10 ? "0" : "") + ss;
+    };
+});

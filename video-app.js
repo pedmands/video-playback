@@ -1,4 +1,4 @@
-var videoApp = angular.module('videoApp', []);
+var videoApp = angular.module('videoApp', ['ngAnimate']);
 
 videoApp.controller('VideoController', ['$scope', '$window', '$interval', '$http', function($scope, $window, $interval, $http) {
 	$scope.videoDisplay = document.getElementById("VideoElement");
